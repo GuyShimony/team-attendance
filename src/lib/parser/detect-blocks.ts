@@ -1,26 +1,20 @@
+import { RawCell } from "@/lib/google-sheets/fetcher"
 import { isHebrewDayName } from "./normalize"
 
 export interface BlockBoundary {
-  headerRowIndex: number   // row with Hebrew day names
-  dateRowIndex: number     // row immediately below with DD/MM/YYYY dates
-  endRowIndex: number      // last row of this block (exclusive of next header)
+  headerRowIndex: number
+  dateRowIndex: number
+  endRowIndex: number
 }
 
-/**
- * Scan rows and find all weekly mini-table headers.
- * A row is a header if it contains ≥5 of 7 Hebrew day names.
- */
-export function detectBlocks(rows: (string | null)[][]): BlockBoundary[] {
+export function detectBlocks(rows: RawCell[][]): BlockBoundary[] {
   const headerRows: number[] = []
 
   for (let i = 0; i < rows.length; i++) {
-    const row = rows[i]
-    const dayNameCount = row.filter(
-      (cell) => cell !== null && isHebrewDayName(cell)
+    const dayNameCount = rows[i].filter(
+      (cell) => cell.value !== null && isHebrewDayName(cell.value)
     ).length
-    if (dayNameCount >= 5) {
-      headerRows.push(i)
-    }
+    if (dayNameCount >= 5) headerRows.push(i)
   }
 
   return headerRows.map((headerRowIndex, idx) => ({
