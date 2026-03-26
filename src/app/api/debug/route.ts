@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic"
 
 import { getCachedSheetData } from "@/lib/cache"
+import { fetchAllTabs } from "@/lib/google-sheets/fetcher"
 
 // GET /api/debug?person=גיא
 // Returns all parsed entries for a person, sorted by date, with raw cell values.
@@ -20,6 +21,15 @@ export async function GET(request: Request) {
 
   if (!person) {
     return Response.json({ names: namesWithHex })
+  }
+
+  // ?person=__raw&tab=התחלה → dump first 20 rows of that tab
+  if (person === "__raw") {
+    const { searchParams: sp } = new URL(request.url)
+    const tabName = sp.get("tab") ?? ""
+    const tabs = await fetchAllTabs()
+    const tab = tabs.find((t) => t.tabName === tabName) ?? tabs[0]
+    return Response.json({ tabName: tab?.tabName, rows: tab?.rows.slice(0, 20) })
   }
 
   const entries = data.allEntries

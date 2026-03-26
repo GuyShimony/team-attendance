@@ -25,15 +25,18 @@ export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
     // Sort chronologically (ISO dates compare correctly as strings)
     const sorted = [...personEntries].sort((a, b) => a.date.localeCompare(b.date))
 
-    let atWork = false  // initial state: not at work
+    // If the first explicit transition we see is יוצא, the person was already
+    // at work before our data starts — so begin in at_work state.
+    const firstTransition = sorted.find((e) => isArriving(e.rawCell) || isLeaving(e.rawCell))
+    let atWork = firstTransition ? isLeaving(firstTransition.rawCell) : false
 
     for (const entry of sorted) {
       const cell = entry.rawCell
 
       if (isArriving(cell)) {
-        atWork = true                  // arrival day counts as at work
+        atWork = true   // arrival day counts as at work
       } else if (isLeaving(cell)) {
-        atWork = false                 // departure day does NOT count
+        atWork = false  // departure day does NOT count
       }
       // else: inherit atWork unchanged
 
