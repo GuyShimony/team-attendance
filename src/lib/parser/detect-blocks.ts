@@ -1,4 +1,3 @@
-import { RawCell } from "@/lib/google-sheets/fetcher"
 import { isHebrewDayName } from "./normalize"
 
 export interface BlockBoundary {
@@ -7,14 +6,12 @@ export interface BlockBoundary {
   endRowIndex: number
 }
 
-export function detectBlocks(rows: RawCell[][]): BlockBoundary[] {
+export function detectBlocks(rows: (string | null)[][]): BlockBoundary[] {
   const headerRows: number[] = []
 
   for (let i = 0; i < rows.length; i++) {
-    const dayNameCount = rows[i].filter(
-      (cell) => cell.value !== null && isHebrewDayName(cell.value)
-    ).length
-    if (dayNameCount >= 5) headerRows.push(i)
+    const count = rows[i].filter((c) => c !== null && isHebrewDayName(c)).length
+    if (count >= 5) headerRows.push(i)
   }
 
   return headerRows.map((headerRowIndex, idx) => ({

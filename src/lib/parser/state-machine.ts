@@ -1,15 +1,15 @@
-import { DayEntry, WorkStatus } from "@/types"
+import { DayEntry } from "@/types"
+import { isArriving, isLeaving } from "./normalize"
 
 /**
- * Run the presence state machine per person across all entries (sorted by date).
+ * Resolve isAtWork for every entry using an interval state machine.
  *
- * Rules:
- *   - initial state = "off"
- *   - "arriving"       → state = "at_work", isAtWork = true
- *   - "leaving"        → state = "off",     isAtWork = false
- *   - "other_battery" / "standby" → isAtWork = true (no state change)
- *   - empty / null     → isAtWork = (state == "at_work")
- *   - "unknown"        → keep current state, isAtWork = (state == "at_work")
+ * Rules (per person, sorted chronologically across ALL tabs):
+ *  - מגיע / מגיעה in cell → worker arrives; this day AND all following days
+ *    are at work until the next יוצא/יוצאת.
+ *  - יוצא / יוצאת in cell → worker leaves; this day is NOT counted.
+ *    All following days are not at work until the next מגיע.
+ *  - Any other cell (empty or other text) → inherit current state.
  */
 export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
   // Group by person
@@ -21,45 +21,27 @@ export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
 
   const result: DayEntry[] = []
 
-  for (const [, personEntries] of byPerson) {
-    // Sort chronologically
-    const sorted = [...personEntries].sort((a, b) =>
-      a.date.localeCompare(b.date)
-    )
+  for (const personEntries of byPerson.values()) {
+    // Sort chronologically (ISO dates compare correctly as strings)
+    const sorted = [...personEntries].sort((a, b) => a.date.localeCompare(b.date))
 
-    let state: "at_work" | "off" = "off"
+    let atWork = false  // initial state: not at work
 
     for (const entry of sorted) {
-      const explicit = entry.rawCell
-        ? entry.rawCell.trim().normalize("NFC")
-        : null
+      const cell = entry.rawCell
 
-      let resolvedStatus: WorkStatus = entry.status
-      let isAtWork: boolean
-
-      if (resolvedStatus === "arriving") {
-        state = "at_work"
-        isAtWork = true
-      } else if (resolvedStatus === "leaving") {
-        state = "off"
-        isAtWork = false
-      } else if (
-        resolvedStatus === "other_battery" ||
-        resolvedStatus === "standby"
-      ) {
-        isAtWork = true
-        // don't change state
-      } else {
-        // empty / unknown → derive from state
-        isAtWork = state === "at_work"
-        if (isAtWork) {
-          resolvedStatus = "at_work"
-        } else {
-          resolvedStatus = "off"
-        }
+      if (isArriving(cell)) {
+        atWork = true                  // arrival day counts as at work
+      } else if (isLeaving(cell)) {
+        atWork = false                 // departure day does NOT count
       }
+      // else: inherit atWork unchanged
 
-      result.push({ ...entry, status: resolvedStatus, isAtWork })
+      result.push({
+        ...entry,
+        status: atWork ? "at_work" : "off",
+        isAtWork: atWork,
+      })
     }
   }
 

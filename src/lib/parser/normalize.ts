@@ -1,5 +1,3 @@
-import { WorkStatus } from "@/types"
-
 const HEBREW_DAY_NAMES = new Set([
   "ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת",
 ])
@@ -8,21 +6,21 @@ export function isHebrewDayName(cell: string): boolean {
   return HEBREW_DAY_NAMES.has(cell.trim().normalize("NFC"))
 }
 
-export function isLeaving(text: string | null): boolean {
-  if (!text) return false
-  const n = text.trim().normalize("NFC")
-  return n === "יוצא" || n === "יוצאת"
+/** Split a cell into normalised words for flexible keyword matching. */
+function words(text: string): string[] {
+  return text.trim().normalize("NFC").split(/\s+/)
 }
 
-export function normalizeStatus(raw: string | null): WorkStatus | null {
-  if (!raw) return null
-  const n = raw.trim().normalize("NFC")
-  if (n === "מגיע" || n === "מגיעה") return "arriving"
-  if (n === "יוצא"  || n === "יוצאת")  return "leaving"
-  if (n === "בסוללה אחרת")             return "other_battery"
-  if (n === "כוננות")                  return "standby"
-  if (n === "") return null
-  return "unknown"
+export function isArriving(cell: string | null): boolean {
+  if (!cell) return false
+  const w = words(cell)
+  return w.includes("מגיע") || w.includes("מגיעה")
+}
+
+export function isLeaving(cell: string | null): boolean {
+  if (!cell) return false
+  const w = words(cell)
+  return w.includes("יוצא") || w.includes("יוצאת")
 }
 
 const DAY_NAME_TO_INDEX: Record<string, number> = {
