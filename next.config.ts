@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // cacheComponents is opt-in (Next.js 16); disabled here so pages use
+  // force-dynamic + unstable_cache instead of build-time cache warming.
 };
 
 export default nextConfig;
