@@ -1,21 +1,16 @@
 import { google } from "googleapis"
-import { createPrivateKey } from "crypto"
+import { GoogleAuth } from "google-auth-library"
 
-export function getAuthClient() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-  const rawKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n")
+function getAuth() {
+  const client_email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+  const private_key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n")
 
-  if (!email || !rawKey) {
+  if (!client_email || !private_key) {
     throw new Error("Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY")
   }
 
-  // Node 18+ / OpenSSL 3 requires PKCS#8 format; Google issues PKCS#1 keys.
-  // Convert on the fly to avoid "DECODER routines::unsupported" errors.
-  const key = createPrivateKey(rawKey).export({ type: "pkcs8", format: "pem" }) as string
-
-  return new google.auth.JWT({
-    email,
-    key,
+  return new GoogleAuth({
+    credentials: { client_email, private_key },
     scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
   })
 }
@@ -24,7 +19,7 @@ export async function batchGetSheetValues(
   spreadsheetId: string,
   ranges: string[]
 ): Promise<(string[][] | null)[]> {
-  const auth = getAuthClient()
+  const auth = getAuth()
   const sheets = google.sheets({ version: "v4", auth })
 
   const response = await sheets.spreadsheets.values.batchGet({
@@ -37,7 +32,7 @@ export async function batchGetSheetValues(
 }
 
 export async function getSheetMetadata(spreadsheetId: string) {
-  const auth = getAuthClient()
+  const auth = getAuth()
   const sheets = google.sheets({ version: "v4", auth })
 
   const response = await sheets.spreadsheets.get({
