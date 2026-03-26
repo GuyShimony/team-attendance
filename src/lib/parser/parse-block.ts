@@ -23,20 +23,14 @@ export function parseBlock(
     dayCols.push({ colIndex: col, dayOfWeek: dow, date: parseHebrewDate(dateRow[col] ?? null) })
   }
 
-  const dayColSet = new Set(dayCols.map((d) => d.colIndex))
   const entries: DayEntry[] = []
 
   for (let rowIdx = dateRowIndex + 1; rowIdx < endRowIndex; rowIdx++) {
     const row = rows[rowIdx] ?? []
     if (row.every((c) => !c)) continue
 
-    // Person name = first non-empty cell that is NOT in a day column.
-    // This prevents a status cell (e.g. "מגיע") from being mistaken for the name.
-    const nameValue = row
-      .map((c, i) => ({ c, i }))
-      .find(({ c, i }) => !dayColSet.has(i) && c !== null && c.trim() !== "")
-      ?.c ?? null
-
+    // Person name = first non-empty cell in the row.
+    const nameValue = row.find((c) => c !== null && c.trim() !== "") ?? null
     if (!nameValue) continue
     const personName = nameValue.trim().normalize("NFC")
 
