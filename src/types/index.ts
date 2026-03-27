@@ -44,6 +44,7 @@ export interface PersonStats {
   personName: string
   workingDays: number
   offDays: number
+  workPercent: number
   saturdayPercent: number
   arrivals: number
   monthlyWorkDays: Record<string, number>  // "YYYY-MM" → count

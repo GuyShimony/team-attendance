@@ -35,10 +35,13 @@ export function getPersonStats(
       ? Math.round((saturdayWorkDays / saturdayTotalDays) * 100)
       : 0
 
+  const totalDays = workingDays + offDays
+
   return {
     personName,
     workingDays,
     offDays,
+    workPercent: totalDays > 0 ? Math.round((workingDays / totalDays) * 100) : 0,
     saturdayPercent,
     arrivals,
     monthlyWorkDays,
