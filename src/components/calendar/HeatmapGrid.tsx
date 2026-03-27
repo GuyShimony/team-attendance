@@ -35,7 +35,7 @@ function hebrewMonth(ym: string) {
 export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
   const [sortKey, setSortKey]       = useState<SortKey>("name")
   const [cellSize, setCellSize]     = useState<CellSize>("md")
-  const [monthIndex, setMonthIndex] = useState<number | null>(null) // null = all
+  const [monthIndex, setMonthIndex] = useState<number | null>(null)
 
   const { allMonths, personList, cellStatus, daySummary, personStats } = useMemo(() => {
     const personSet  = new Set<string>()
@@ -61,7 +61,6 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
 
     const allDates = [...dateSet].sort()
 
-    // Group dates by month
     const monthMap = new Map<string, string[]>()
     for (const d of allDates) {
       const m = d.slice(0, 7)
@@ -78,22 +77,16 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
     const cellStatus = (person: string, date: string): CellStatus =>
       statusMap.get(`${person}::${date}`) ?? "none"
 
-    // Day summary: count at-work per date
     const daySummary = new Map<string, number>()
     for (const d of allDates) {
       let count = 0
-      for (const p of personSet) {
-        if (cellStatus(p, d) === "at_work") count++
-      }
+      for (const p of personSet) if (cellStatus(p, d) === "at_work") count++
       daySummary.set(d, count)
     }
 
-    const personList = [...personSet]
-
-    return { allMonths, personList, cellStatus, daySummary, personStats }
+    return { allMonths, personList: [...personSet], cellStatus, daySummary, personStats }
   }, [allEntries])
 
-  // Sort persons
   const sortedPersons = useMemo(() => {
     return [...personList].sort((a, b) => {
       if (sortKey === "name")    return a.localeCompare(b, "he")
@@ -103,7 +96,6 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
     })
   }, [personList, sortKey, personStats])
 
-  // Month filter
   const visibleMonths = monthIndex === null ? allMonths : [allMonths[monthIndex]].filter(Boolean) as typeof allMonths
 
   const px = CELL_PX[cellSize]
@@ -121,11 +113,8 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
             className={`rounded px-2 py-1 text-xs font-medium transition-colors ${monthIndex === null ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
           >כל החודשים</button>
           {allMonths.map(([ym], i) => (
-            <button
-              key={ym}
-              onClick={() => setMonthIndex(i === monthIndex ? null : i)}
-              className={`rounded px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap ${monthIndex === i ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-            >
+            <button key={ym} onClick={() => setMonthIndex(i === monthIndex ? null : i)}
+              className={`rounded px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap ${monthIndex === i ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               {HEBREW_MONTHS[ym.slice(5)] ?? ym}
             </button>
           ))}
@@ -152,14 +141,14 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid — RTL: name column on the right, dates flow right→left */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
         <div className="overflow-auto">
-          <table className="border-collapse text-xs" style={{ direction: "ltr" }}>
+          <table className="border-collapse text-xs" style={{ direction: "rtl" }}>
             <thead>
               {/* Month headers */}
               <tr>
-                <th className="sticky left-0 z-20 bg-white dark:bg-gray-900 min-w-[130px] border-b border-gray-200 dark:border-gray-700" />
+                <th className="sticky right-0 z-20 bg-white dark:bg-gray-900 min-w-[130px] border-b border-gray-200 dark:border-gray-700" />
                 <th className="w-12 border-b border-gray-200 dark:border-gray-700" />
                 {visibleMonths.map(([ym, dates]) => (
                   <th key={ym} colSpan={dates.length}
@@ -170,18 +159,19 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
               </tr>
               {/* Date row */}
               <tr>
-                <th className="sticky left-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-right pr-3 text-gray-400 font-normal py-1">שם</th>
-                <th className="border-b border-gray-200 dark:border-gray-700 border-l border-gray-100 dark:border-gray-800 text-gray-400 font-normal px-1 w-10">%</th>
+                <th className="sticky right-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-right pr-3 text-gray-400 font-normal py-1">שם</th>
+                <th className="border-b border-gray-200 dark:border-gray-700 border-r border-gray-100 dark:border-gray-800 text-gray-400 font-normal px-1 w-10">%</th>
                 {visibleMonths.map(([ym, dates]) =>
                   dates.map((date, i) => {
                     const [, , day] = date.split("-")
                     const dow = new Date(date).getDay()
                     const isSat = dow === 6
+                    const isFirst = i === 0
                     return (
                       <th key={date}
                         title={`${day}/${ym.slice(5)} ${DAY_SHORT[dow]}`}
                         style={{ width: px, minWidth: px }}
-                        className={`pb-1 font-normal text-center border-b border-gray-200 dark:border-gray-700 ${isSat ? "border-r border-gray-300 dark:border-gray-600 text-blue-400" : "text-gray-400 dark:text-gray-600"} ${i === 0 ? "border-l border-gray-200 dark:border-gray-700" : ""}`}>
+                        className={`pb-1 font-normal text-center border-b border-gray-200 dark:border-gray-700 ${isSat ? "border-l border-gray-300 dark:border-gray-600 text-blue-400" : "text-gray-400 dark:text-gray-600"} ${isFirst ? "border-r border-gray-200 dark:border-gray-700" : ""}`}>
                         {cellSize !== "sm" ? parseInt(day) : ""}
                       </th>
                     )
@@ -195,23 +185,27 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
                 const pct = ps?.percent ?? 0
                 return (
                   <tr key={person} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 group">
-                    <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 pr-3 pl-2 py-0.5 text-right text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap border-b border-gray-100 dark:border-gray-800" style={{ direction: "rtl" }}>
+                    {/* Name — sticky right */}
+                    <td className="sticky right-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 pr-3 pl-2 py-0.5 text-right text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap border-b border-gray-100 dark:border-gray-800">
                       {person}
                     </td>
-                    <td className="px-1 py-0.5 text-center border-b border-gray-100 dark:border-gray-800 border-l border-gray-100 dark:border-gray-800 font-medium tabular-nums"
+                    {/* Work % */}
+                    <td className="px-1 py-0.5 text-center border-b border-gray-100 dark:border-gray-800 border-r border-gray-100 dark:border-gray-800 font-medium tabular-nums"
                       style={{ color: pct >= 60 ? "#16a34a" : pct >= 30 ? "#ca8a04" : "#dc2626" }}>
                       {pct}
                     </td>
+                    {/* Cells */}
                     {visibleMonths.map(([ym, dates]) =>
                       dates.map((date, i) => {
                         const cs = cellStatus(person, date)
                         const dow = new Date(date).getDay()
                         const isSat = dow === 6
                         const [, , day] = date.split("-")
+                        const isFirst = i === 0
                         return (
                           <td key={date}
                             title={`${person} – ${day}/${ym.slice(5)} (${DAY_SHORT[dow]})`}
-                            className={`p-0 border-b border-gray-100 dark:border-gray-800 ${i === 0 ? "border-l border-gray-200 dark:border-gray-700" : ""} ${isSat ? "border-r border-gray-300 dark:border-gray-600" : ""}`}>
+                            className={`p-0 border-b border-gray-100 dark:border-gray-800 ${isFirst ? "border-r border-gray-200 dark:border-gray-700" : ""} ${isSat ? "border-l border-gray-300 dark:border-gray-600" : ""}`}>
                             <div style={{ width: px, height: px }}
                               className={`rounded-sm mx-auto cursor-default transition-colors ${CELL_COLOR[cs]}`} />
                           </td>
@@ -223,17 +217,18 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
               })}
               {/* Summary row */}
               <tr className="border-t-2 border-gray-300 dark:border-gray-600">
-                <td className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800 pr-3 pl-2 py-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap" style={{ direction: "rtl" }}>
+                <td className="sticky right-0 z-10 bg-gray-50 dark:bg-gray-800 pr-3 pl-2 py-1 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap">
                   סה״כ בעבודה
                 </td>
-                <td className="border-l border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800" />
+                <td className="border-r border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800" />
                 {visibleMonths.map(([ym, dates]) =>
                   dates.map((date, i) => {
                     const count = daySummary.get(date) ?? 0
                     const isSat = new Date(date).getDay() === 6
+                    const isFirst = i === 0
                     return (
                       <td key={date}
-                        className={`p-0 bg-gray-50 dark:bg-gray-800 text-center text-[9px] font-medium ${count > 0 ? "text-gray-600 dark:text-gray-400" : "text-gray-300 dark:text-gray-700"} ${i === 0 ? "border-l border-gray-200 dark:border-gray-700" : ""} ${isSat ? "border-r border-gray-300 dark:border-gray-600" : ""}`}>
+                        className={`p-0 bg-gray-50 dark:bg-gray-800 text-center text-[9px] font-medium ${count > 0 ? "text-gray-600 dark:text-gray-400" : "text-gray-300 dark:text-gray-700"} ${isFirst ? "border-r border-gray-200 dark:border-gray-700" : ""} ${isSat ? "border-l border-gray-300 dark:border-gray-600" : ""}`}>
                         {count > 0 ? count : ""}
                       </td>
                     )
@@ -246,10 +241,10 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-5 px-4 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
-          <LegendItem color="bg-green-500"                 label="בעבודה" />
-          <LegendItem color="bg-red-200 dark:bg-red-900"  label="לא בעבודה" />
-          <LegendItem color="bg-yellow-300 dark:bg-yellow-700" label="משוחרר" />
-          <LegendItem color="bg-gray-100 dark:bg-gray-800" label="אין נתון" />
+          <LegendItem color="bg-green-500"                      label="בעבודה" />
+          <LegendItem color="bg-red-200 dark:bg-red-900"        label="לא בעבודה" />
+          <LegendItem color="bg-yellow-300 dark:bg-yellow-700"  label="משוחרר" />
+          <LegendItem color="bg-gray-100 dark:bg-gray-800"      label="אין נתון" />
           <span className="mr-auto text-gray-400 dark:text-gray-600">% = אחוז נוכחות</span>
         </div>
       </div>
