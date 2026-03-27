@@ -29,9 +29,9 @@ export function parseBlock(
     const row = rows[rowIdx] ?? []
     if (row.every((c) => !c)) continue
 
-    // Person name = first non-empty cell in the row.
-    const nameValue = row.find((c) => c !== null && c.trim() !== "") ?? null
-    if (!nameValue) continue
+    // Person name = column A only. Skip rows with no name or the header title.
+    const nameValue = row[0]
+    if (!nameValue || nameValue.trim() === "" || nameValue.trim() === "שם") continue
     const personName = nameValue.trim().normalize("NFC")
 
     for (const { colIndex, dayOfWeek, date } of dayCols) {
