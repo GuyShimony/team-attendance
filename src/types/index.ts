@@ -3,6 +3,7 @@ export type WorkStatus =
   | "leaving"
   | "at_work"
   | "off"
+  | "released"
   | "standby"
   | "other_battery"
   | "unknown"

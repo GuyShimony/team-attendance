@@ -23,6 +23,11 @@ export function isLeaving(cell: string | null): boolean {
   return w.includes("יוצא") || w.includes("יוצאת")
 }
 
+export function isReleased(cell: string | null): boolean {
+  if (!cell) return false
+  return words(cell).includes("משוחרר")
+}
+
 const DAY_NAME_TO_INDEX: Record<string, number> = {
   ראשון: 0, שני: 1, שלישי: 2, רביעי: 3, חמישי: 4, שישי: 5, שבת: 6,
 }

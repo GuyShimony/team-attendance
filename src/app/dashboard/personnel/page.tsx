@@ -44,6 +44,8 @@ export default function PersonnelPage() {
     const monthlyWorkDays: Record<string, number> = {}
 
     for (const e of entries) {
+      if (e.status === "released") continue  // excluded from all counts
+
       if (e.isAtWork) {
         workingDays++
         const month = e.date.slice(0, 7)

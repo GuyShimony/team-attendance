@@ -1,5 +1,5 @@
 import { DayEntry } from "@/types"
-import { isArriving, isLeaving } from "./normalize"
+import { isArriving, isLeaving, isReleased } from "./normalize"
 
 /**
  * Resolve isAtWork for every entry using an interval state machine.
@@ -40,11 +40,16 @@ export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
       }
       // else: inherit atWork unchanged
 
-      result.push({
-        ...entry,
-        status: atWork ? "at_work" : "off",
-        isAtWork: atWork,
-      })
+      // משוחרר: excluded from all counts; state carries through unchanged
+      if (isReleased(cell)) {
+        result.push({ ...entry, status: "released", isAtWork: false })
+      } else {
+        result.push({
+          ...entry,
+          status: atWork ? "at_work" : "off",
+          isAtWork: atWork,
+        })
+      }
     }
   }
 
