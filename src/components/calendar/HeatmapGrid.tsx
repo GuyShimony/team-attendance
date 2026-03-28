@@ -105,16 +105,16 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
   return (
     <div className="space-y-3">
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Month nav */}
-        <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
+        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
           <button
             onClick={() => setMonthIndex(null)}
-            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${monthIndex === null ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-          >כל החודשים</button>
+            className={`rounded px-2.5 py-1.5 text-xs font-medium transition-colors min-h-[32px] ${monthIndex === null ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+          >כל</button>
           {allMonths.map(([ym], i) => (
             <button key={ym} onClick={() => setMonthIndex(i === monthIndex ? null : i)}
-              className={`rounded px-2 py-1 text-xs font-medium transition-colors whitespace-nowrap ${monthIndex === i ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              className={`rounded px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap min-h-[32px] ${monthIndex === i ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               {HEBREW_MONTHS[ym.slice(5)] ?? ym}
             </button>
           ))}
@@ -124,7 +124,7 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
         <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
           {([["name","שם"],["percent","%"],["days","ימים"]] as [SortKey,string][]).map(([k,label]) => (
             <button key={k} onClick={() => setSortKey(k)}
-              className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${sortKey === k ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors min-h-[32px] ${sortKey === k ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               {label}
             </button>
           ))}
@@ -134,7 +134,7 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
         <div className="flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1">
           {([["sm","S"],["md","M"],["lg","L"]] as [CellSize,string][]).map(([k,label]) => (
             <button key={k} onClick={() => setCellSize(k)}
-              className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${cellSize === k ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
+              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors min-h-[32px] ${cellSize === k ? "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"}`}>
               {label}
             </button>
           ))}
@@ -143,7 +143,7 @@ export function HeatmapGrid({ allEntries }: HeatmapGridProps) {
 
       {/* Grid — RTL: name column on the right, dates flow right→left */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
-        <div className="overflow-auto">
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
           <table className="border-collapse text-xs" style={{ direction: "rtl" }}>
             <thead>
               {/* Month headers */}
