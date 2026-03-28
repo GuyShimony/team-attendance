@@ -41,7 +41,8 @@ export function MonthlyBarChart({ monthlyWorkDays, selectedMonth, onMonthClick }
             dataKey="days"
             radius={[6, 6, 0, 0]}
             style={{ cursor: "pointer" }}
-            onClick={(data: { month: string }) => onMonthClick(data.month)}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onClick={(data: any) => onMonthClick(data.month)}
           >
             <LabelList dataKey="days" position="top" style={{ fontSize: 11, fill: "#6b7280" }} />
             {data.map((entry) => (
