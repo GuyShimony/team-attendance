@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 const navItems = [
   { href: "/dashboard/summary",   label: "סיכום",   icon: "📊" },
-  { href: "/dashboard/personnel", label: "פרסונל",  icon: "👥" },
+  { href: "/dashboard/personnel", label: "הצוות",  icon: "👥" },
   { href: "/dashboard/calendar",  label: "לוח שנה", icon: "📅" },
 ]
 

@@ -108,7 +108,7 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">פרסונל</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">הצוות</h1>
 
       {/* Worker card grid */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
