@@ -25,12 +25,20 @@ export default function PersonnelPage() {
   const [personEntries, setPersonEntries] = useState<DayEntry[]>([])
   const [selectedMonth, setSelectedMonth] = useState("")
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   useEffect(() => {
     fetch("/api/sheets")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
       .then((data: SheetData) => {
         setSheetData(data)
+        setLoading(false)
+      })
+      .catch(() => {
+        setFetchError(true)
         setLoading(false)
       })
   }, [])
@@ -127,6 +135,21 @@ export default function PersonnelPage() {
           {Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)}
         </div>
         <CardSkeleton />
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+        <span className="text-4xl">⚠️</span>
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">שגיאה בטעינת הנתונים</p>
+        <button
+          onClick={() => { setFetchError(false); setLoading(true); fetch("/api/sheets").then((r) => r.json()).then((d: SheetData) => { setSheetData(d); setLoading(false) }).catch(() => { setFetchError(true); setLoading(false) }) }}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          נסה שנית
+        </button>
       </div>
     )
   }
