@@ -4,6 +4,16 @@ import { DayEntry } from "@/types"
 
 const DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
 
+const HEBREW_MONTHS: Record<string, string> = {
+  "01": "ינואר", "02": "פברואר", "03": "מרץ",    "04": "אפריל",
+  "05": "מאי",   "06": "יוני",   "07": "יולי",   "08": "אוגוסט",
+  "09": "ספטמבר","10": "אוקטובר","11": "נובמבר", "12": "דצמבר",
+}
+function hebrewMonthLabel(ym: string) {
+  const [year, month] = ym.split("-")
+  return `${HEBREW_MONTHS[month] ?? ym} ${year}`
+}
+
 interface DayBreakdownProps {
   entries: DayEntry[]
   selectedMonth: string
@@ -23,7 +33,7 @@ export function DayBreakdown({ entries, selectedMonth }: DayBreakdownProps) {
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          פירוט ימים — {selectedMonth}
+          פירוט ימים — {hebrewMonthLabel(selectedMonth)}
         </h3>
         <div className="flex items-center gap-3 text-xs">
           {releasedCount > 0 && (

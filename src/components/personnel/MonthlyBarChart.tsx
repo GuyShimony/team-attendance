@@ -32,21 +32,17 @@ export function MonthlyBarChart({ monthlyWorkDays, selectedMonth, onMonthClick }
       <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">ימי עבודה לפי חודש</h3>
       <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">לחץ על עמודה לפירוט ימים</p>
       <ResponsiveContainer width="100%" height={240}>
-        <BarChart
-          data={data}
-          margin={{ top: 20, right: 4, bottom: 4, left: 0 }}
-          onClick={(e) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const month = (e as any)?.activePayload?.[0]?.payload?.month
-            if (month) onMonthClick(month)
-          }}
-          style={{ cursor: "pointer" }}
-        >
+        <BarChart data={data} margin={{ top: 20, right: 4, bottom: 4, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <Bar dataKey="days" radius={[6, 6, 0, 0]}>
+          <Bar
+            dataKey="days"
+            radius={[6, 6, 0, 0]}
+            style={{ cursor: "pointer" }}
+            onClick={(data: { month: string }) => onMonthClick(data.month)}
+          >
             <LabelList dataKey="days" position="top" style={{ fontSize: 11, fill: "#6b7280" }} />
             {data.map((entry) => (
               <Cell
