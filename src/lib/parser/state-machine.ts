@@ -17,9 +17,9 @@ import { isArriving, isLeaving, isReleased } from "./normalize"
  *  - משוחרר      → state = "excluded" (day excluded; resets state)
  *  - empty/other → inherit state unchanged
  *
- * "excluded" days (whether explicit משוחרר or implicitly before/after an
- * active period) are emitted with status="released", isAtWork=false, and are
- * skipped by all stats calculations.
+ * Explicit משוחרר days are emitted with status="released" (yellow in heatmap).
+ * Implicitly excluded days (state="excluded" with no explicit cell) are omitted
+ * entirely — they appear as gray ("none") in the heatmap.
  */
 export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
   const byPerson = new Map<string, DayEntry[]>()
@@ -60,8 +60,9 @@ export function applyStateMachine(entries: DayEntry[]): DayEntry[] {
       // else: inherit state unchanged
 
       if (state === "excluded") {
-        // Implicitly excluded (no active period anchor)
-        result.push({ ...entry, status: "released", isAtWork: false })
+        // Implicitly excluded — no explicit cell, just no active period yet
+        // (or after a release). Omit the entry so it renders as gray ("none").
+        continue
       } else {
         result.push({
           ...entry,
