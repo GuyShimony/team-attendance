@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { PersonStatsGrid } from "@/components/personnel/PersonStatsGrid"
 import { MonthlyBarChart } from "@/components/personnel/MonthlyBarChart"
 import { DayBreakdown } from "@/components/personnel/DayBreakdown"
@@ -23,8 +23,6 @@ interface PersonnelClientProps {
 
 export function PersonnelClient({ allEntries }: PersonnelClientProps) {
   const [selectedPerson, setSelectedPerson] = useState("")
-  const [stats, setStats] = useState<PersonStats | null>(null)
-  const [personEntries, setPersonEntries] = useState<DayEntry[]>([])
   const [selectedMonth, setSelectedMonth] = useState("")
 
   // Quick stats for all workers (for the card grid)
@@ -48,14 +46,9 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
     return { allWorkerStats, names }
   }, [allEntries])
 
-  // Compute full stats when a person is selected
-  useEffect(() => {
-    if (!selectedPerson) {
-      setStats(null)
-      setPersonEntries([])
-      setSelectedMonth("")
-      return
-    }
+  // Compute full stats + entries for the selected person (synchronous useMemo)
+  const personData = useMemo<{ stats: PersonStats; entries: DayEntry[]; latestMonth: string } | null>(() => {
+    if (!selectedPerson) return null
 
     const entries = allEntries
       .filter((e) => e.personName === selectedPerson)
@@ -64,7 +57,8 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
     let workingDays = 0, offDays = 0, saturdayWorkDays = 0, saturdayTotalDays = 0, arrivals = 0
     const monthlyWorkDays: Record<string, number> = {}
 
-    for (const e of entries) {
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i]
       if (e.status === "released") continue
       if (e.isAtWork) {
         workingDays++
@@ -77,23 +71,33 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
         saturdayTotalDays++
         if (e.isAtWork) saturdayWorkDays++
       }
-      if (e.status === "at_work" && entries[entries.indexOf(e) - 1]?.status !== "at_work") arrivals++
+      if (e.status === "at_work" && entries[i - 1]?.status !== "at_work") arrivals++
     }
 
     const totalDays = workingDays + offDays
-    setStats({
-      personName: selectedPerson,
-      workingDays,
-      offDays,
-      workPercent: totalDays > 0 ? Math.round((workingDays / totalDays) * 100) : 0,
-      saturdayPercent: saturdayTotalDays > 0 ? Math.round((saturdayWorkDays / saturdayTotalDays) * 100) : 0,
-      arrivals,
-      monthlyWorkDays,
-    })
-    setPersonEntries(entries)
     const months = Object.keys(monthlyWorkDays).sort()
-    if (months.length > 0) setSelectedMonth(months[months.length - 1])
+    return {
+      stats: {
+        personName: selectedPerson,
+        workingDays,
+        offDays,
+        workPercent: totalDays > 0 ? Math.round((workingDays / totalDays) * 100) : 0,
+        saturdayPercent: saturdayTotalDays > 0 ? Math.round((saturdayWorkDays / saturdayTotalDays) * 100) : 0,
+        arrivals,
+        monthlyWorkDays,
+      },
+      entries,
+      latestMonth: months[months.length - 1] ?? "",
+    }
   }, [allEntries, selectedPerson])
+
+  // Active month: user pick from bar chart, or default to latest when person changes
+  const activeMonth = selectedMonth || personData?.latestMonth || ""
+
+  function handlePersonSelect(name: string) {
+    setSelectedPerson((prev) => (prev === name ? "" : name))
+    setSelectedMonth("") // reset month so latestMonth kicks in
+  }
 
   return (
     <div className="space-y-6">
@@ -109,7 +113,7 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
           return (
             <button
               key={name}
-              onClick={() => setSelectedPerson(isSelected ? "" : name)}
+              onClick={() => handlePersonSelect(name)}
               className={`group relative rounded-xl border p-4 text-right shadow-sm transition-all duration-150 hover:shadow-md ${
                 isSelected
                   ? "border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950 ring-2 ring-blue-300 dark:ring-blue-700"
@@ -143,7 +147,7 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
       </div>
 
       {/* Detail panel */}
-      {stats ? (
+      {personData ? (
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <div className={`h-8 w-8 rounded-full ${avatarColor(selectedPerson)} flex items-center justify-center text-white text-xs font-bold`}>
@@ -151,14 +155,14 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedPerson}</h2>
           </div>
-          <PersonStatsGrid stats={stats} />
+          <PersonStatsGrid stats={personData.stats} />
           <MonthlyBarChart
-            monthlyWorkDays={stats.monthlyWorkDays}
-            selectedMonth={selectedMonth}
+            monthlyWorkDays={personData.stats.monthlyWorkDays}
+            selectedMonth={activeMonth}
             onMonthClick={setSelectedMonth}
           />
-          {selectedMonth && (
-            <DayBreakdown entries={personEntries} selectedMonth={selectedMonth} />
+          {activeMonth && (
+            <DayBreakdown entries={personData.entries} selectedMonth={activeMonth} />
           )}
         </div>
       ) : (
