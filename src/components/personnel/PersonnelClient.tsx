@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useEffect, useState } from "react"
 import { PersonStatsGrid } from "@/components/personnel/PersonStatsGrid"
 import { MonthlyBarChart } from "@/components/personnel/MonthlyBarChart"
 import { DayBreakdown } from "@/components/personnel/DayBreakdown"
@@ -24,8 +24,8 @@ interface PersonnelClientProps {
 export function PersonnelClient({ allEntries }: PersonnelClientProps) {
   const [selectedPerson, setSelectedPerson] = useState("")
   const [selectedMonth, setSelectedMonth] = useState("")
+  const detailRef = useRef<HTMLDivElement>(null)
 
-  // Quick stats for all workers (for the card grid)
   const { allWorkerStats, names } = useMemo(() => {
     const acc = new Map<string, { worked: number; total: number }>()
     for (const e of allEntries) {
@@ -46,7 +46,6 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
     return { allWorkerStats, names }
   }, [allEntries])
 
-  // Compute full stats + entries for the selected person (synchronous useMemo)
   const personData = useMemo<{ stats: PersonStats; entries: DayEntry[]; latestMonth: string } | null>(() => {
     if (!selectedPerson) return null
 
@@ -91,13 +90,21 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
     }
   }, [allEntries, selectedPerson])
 
-  // Active month: user pick from bar chart, or default to latest when person changes
   const activeMonth = selectedMonth || personData?.latestMonth || ""
 
   function handlePersonSelect(name: string) {
     setSelectedPerson((prev) => (prev === name ? "" : name))
-    setSelectedMonth("") // reset month so latestMonth kicks in
+    setSelectedMonth("")
   }
+
+  // Auto-scroll to detail panel on desktop when a person is selected
+  useEffect(() => {
+    if (personData && detailRef.current && window.innerWidth >= 768) {
+      setTimeout(() => {
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 50)
+    }
+  }, [personData])
 
   return (
     <div className="space-y-6">
@@ -146,28 +153,108 @@ export function PersonnelClient({ allEntries }: PersonnelClientProps) {
         })}
       </div>
 
-      {/* Detail panel */}
-      {personData ? (
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className={`h-8 w-8 rounded-full ${avatarColor(selectedPerson)} flex items-center justify-center text-white text-xs font-bold`}>
-              {selectedPerson.slice(0, 2)}
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedPerson}</h2>
-          </div>
-          <PersonStatsGrid stats={personData.stats} />
-          <MonthlyBarChart
-            monthlyWorkDays={personData.stats.monthlyWorkDays}
-            selectedMonth={activeMonth}
-            onMonthClick={setSelectedMonth}
-          />
-          {activeMonth && (
-            <DayBreakdown entries={personData.entries} selectedMonth={activeMonth} />
-          )}
-        </div>
-      ) : (
-        <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-4">לחץ על עובד להצגת נתונים</p>
+      {/* Mobile hint */}
+      {!personData && (
+        <p className="md:hidden text-xs text-center text-gray-400 dark:text-gray-600 -mt-2">
+          לחץ על עובד לצפייה בנתוניו
+        </p>
       )}
+
+      {/* ─── Mobile bottom sheet ─── */}
+      {personData && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-[50] bg-black/50 backdrop-blur-sm animate-fade-in"
+            onClick={() => handlePersonSelect(selectedPerson)}
+          />
+          {/* Sheet */}
+          <div
+            key={selectedPerson}
+            className="md:hidden fixed bottom-0 inset-x-0 z-[60] bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slide-up overflow-hidden flex flex-col"
+            style={{ maxHeight: "85dvh", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
+          >
+            {/* Drag handle */}
+            <div className="flex shrink-0 justify-center pt-3 pb-1">
+              <div className="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600" />
+            </div>
+
+            {/* Sheet header */}
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className={`h-9 w-9 rounded-full ${avatarColor(selectedPerson)} flex items-center justify-center text-white text-sm font-bold`}>
+                  {selectedPerson.slice(0, 2)}
+                </div>
+                <div>
+                  <p className="text-base font-bold text-gray-900 dark:text-gray-100">{selectedPerson}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {personData.stats.workingDays} ימי עבודה · {personData.stats.workPercent}% נוכחות
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => handlePersonSelect(selectedPerson)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-sm font-medium"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto px-4 pt-4 space-y-5">
+              <PersonStatsGrid stats={personData.stats} />
+              <MonthlyBarChart
+                monthlyWorkDays={personData.stats.monthlyWorkDays}
+                selectedMonth={activeMonth}
+                onMonthClick={setSelectedMonth}
+              />
+              {activeMonth && (
+                <DayBreakdown entries={personData.entries} selectedMonth={activeMonth} />
+              )}
+              <div className="h-2" /> {/* bottom breathing room */}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ─── Desktop inline detail panel ─── */}
+      <div ref={detailRef} className="scroll-mt-4">
+        {personData ? (
+          <div key={selectedPerson} className="hidden md:block space-y-6 animate-fade-slide-down">
+            <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 pb-4">
+              <div className={`h-10 w-10 rounded-full ${avatarColor(selectedPerson)} flex items-center justify-center text-white text-sm font-bold`}>
+                {selectedPerson.slice(0, 2)}
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{selectedPerson}</h2>
+                <p className="text-sm text-gray-400 dark:text-gray-500">
+                  {personData.stats.workingDays} ימי עבודה · {personData.stats.workPercent}% נוכחות
+                </p>
+              </div>
+              <button
+                onClick={() => handlePersonSelect(selectedPerson)}
+                className="mr-auto flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                title="סגור"
+              >
+                ✕
+              </button>
+            </div>
+            <PersonStatsGrid stats={personData.stats} />
+            <MonthlyBarChart
+              monthlyWorkDays={personData.stats.monthlyWorkDays}
+              selectedMonth={activeMonth}
+              onMonthClick={setSelectedMonth}
+            />
+            {activeMonth && (
+              <DayBreakdown entries={personData.entries} selectedMonth={activeMonth} />
+            )}
+          </div>
+        ) : (
+          <p className="hidden md:block text-sm text-gray-400 dark:text-gray-600 text-center py-6">
+            לחץ על עובד להצגת נתוניו
+          </p>
+        )}
+      </div>
     </div>
   )
 }
