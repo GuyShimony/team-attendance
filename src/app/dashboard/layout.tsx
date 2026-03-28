@@ -12,7 +12,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-row">
       <Sidebar workerCount={workerCount} fetchedAt={data.fetchedAt} />
-      <main className="flex-1 overflow-auto p-6">{children}</main>
+      <main className="flex-1 overflow-auto p-4 md:p-6 pt-16 md:pt-6 pb-24 md:pb-6">{children}</main>
     </div>
   )
 }
